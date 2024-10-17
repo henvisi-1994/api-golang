@@ -10,5 +10,11 @@ func InitRoute() *mux.Router {
 	rutas := mux.NewRouter()
 	api := rutas.PathPrefix("/api").Subrouter()
 	api.HandleFunc("/", controllers.InitRoute).Methods("GET")
+	api_roles := api.PathPrefix("/roles").Subrouter()
+	api_roles.HandleFunc("", controllers.GetRoles).Methods("GET")
+	api_roles.HandleFunc("/{id}", controllers.GetRol).Methods("GET")
+	api_roles.HandleFunc("", controllers.NewRol).Methods("POST")
+	api_roles.HandleFunc("/{id}", controllers.DeleteRol).Methods("DELETE")
+
 	return rutas
 }
