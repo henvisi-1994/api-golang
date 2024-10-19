@@ -13,6 +13,7 @@ func InitRoute() *mux.Router {
 	api_roles := api.PathPrefix("/roles").Subrouter()
 	api_roles.HandleFunc("", controllers.GetRoles).Methods("GET")
 	api_roles.HandleFunc("/{id}", controllers.GetRol).Methods("GET")
+	api_roles.HandleFunc("/{id}", controllers.UpdateRol).Methods("PUT")
 	api_roles.HandleFunc("", controllers.NewRol).Methods("POST")
 	api_roles.HandleFunc("/{id}", controllers.DeleteRol).Methods("DELETE")
 
