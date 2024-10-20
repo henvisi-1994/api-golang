@@ -10,11 +10,11 @@ import (
 
 type Usuario struct {
 	gorm.Model
-	Id       uint64 ` json:"id" gorm:"primary_key;autoIncrement" `
 	Nombre   string `json:"nombre" gorm:"size:100;not null"`
 	Correo   string `json:"correo" gorm:"size:100;unique;not null"`
-	Password string `json:"password" gorm:"not null"`
+	Password string `json:"-" gorm:"not null"`
 	RolId    uint   ` json:"rol_id" `
+	Rol      Rol    `json:"rol"`
 }
 
 func (Usuario) TableName() string {
