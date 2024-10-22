@@ -22,5 +22,8 @@ func InitRoute() *mux.Router {
 	api_usuarios.HandleFunc("/{id}", controllers.UpdateUsuario).Methods("PUT")
 	api_usuarios.HandleFunc("", controllers.NewUsuario).Methods("POST")
 	api_usuarios.HandleFunc("/{id}", controllers.DeleteUsuario).Methods("DELETE")
+	api_auth := api.PathPrefix("/auth").Subrouter()
+	api_auth.HandleFunc("/login", controllers.Login).Methods("POST")
+
 	return rutas
 }

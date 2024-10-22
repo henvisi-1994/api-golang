@@ -12,7 +12,7 @@ type Usuario struct {
 	gorm.Model
 	Nombre   string `json:"nombre" gorm:"size:100;not null"`
 	Correo   string `json:"correo" gorm:"size:100;unique;not null"`
-	Password string `json:"-" gorm:"not null"`
+	Password string `json:"password" gorm:"not null"`
 	RolId    uint   ` json:"rol_id" `
 	Rol      Rol    `json:"rol"`
 }
@@ -23,10 +23,6 @@ func (Usuario) TableName() string {
 func Hash(password string) ([]byte, error) {
 	return bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 }
-func VerificarPassword(passwordHashed string, password string) error {
-	return bcrypt.CompareHashAndPassword([]byte(passwordHashed), []byte(password))
-}
-
 func (u *Usuario) BeforeSave(tx *gorm.DB) error {
 	passwordHashed, err := Hash(u.Password)
 	if err != nil {
