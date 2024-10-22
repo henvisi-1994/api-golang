@@ -1,10 +1,7 @@
 package auth
 
 import (
-	"crypto/ecdsa"
-	"crypto/x509"
 	"encoding/json"
-	"encoding/pem"
 	"fmt"
 	"log"
 	"net/http"
@@ -19,30 +16,45 @@ func GenerarToken(correo string) (string, error) {
 	claims := jwt.MapClaims{}
 	claims["id"] = correo
 	claims["authorize"] = true
-	claims["exp"] = time.Now().Add(time.Minute * 1).Unix()
-	jwtToken := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
-	//fmt.Println("private key", os.Getenv("API_SECRET_KEY"))
-	ecdsaPrivateKey, err := CargarECDSAKeyDesdeEnv()
-	if err != nil {
-		return "", err
+	claims["exp"] = time.Now().Add(time.Hour * 24).Unix()
+
+	// Usar el algoritmo de firma HS256 con una frase secreta
+	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	// Cargar la frase secreta desde las variables de entorno
+	secret := os.Getenv("API_SECRET_KEY")
+	if secret == "" {
+		return "", fmt.Errorf("frase secreta no encontrada")
 	}
 
-	return jwtToken.SignedString(ecdsaPrivateKey) // Usar la clave privada ECDSA
-
+	// Firmar el token con la frase secreta
+	return jwtToken.SignedString([]byte(secret))
 }
 func ValidarToken(r *http.Request) error {
 	jwtToken := ExtraerToken(r) // Asegúrate de tener esta función implementada
+
+	// Parsear el token y validar la firma con la frase secreta
 	token, err := jwt.Parse(jwtToken, func(token *jwt.Token) (interface{}, error) {
+		// Verificar que el algoritmo sea HS256
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("método inesperado: %s", token.Header["alg"])
 		}
-		return []byte(os.Getenv("API_SECRET_KEY")), nil
+
+		// Cargar la frase secreta desde las variables de entorno
+		secret := os.Getenv("API_SECRET_KEY")
+		if secret == "" {
+			return nil, fmt.Errorf("frase secreta no encontrada")
+		}
+
+		return []byte(secret), nil
 	})
+
 	if err != nil {
-		return err
+		return fmt.Errorf("error en la validación del token: %v", err)
 	}
+
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		Pretty(claims)
+		Pretty(claims) // Procesar los claims si es necesario
 		return nil
 	}
 
@@ -70,25 +82,4 @@ func ExtraerToken(r *http.Request) string {
 		return strings.Split(tokenString, " ")[1]
 	}
 	return ""
-}
-func CargarECDSAKeyDesdeEnv() (*ecdsa.PrivateKey, error) {
-	// Leer la clave privada desde la variable de entorno
-	ecdsaPrivateKeyPEM := os.Getenv("API_SECRET_KEY")
-	if ecdsaPrivateKeyPEM == "" {
-		return nil, fmt.Errorf("la variable de entorno API_SECRET_KEY no está establecida")
-	}
-
-	// Decodificar el bloque PEM
-	block, _ := pem.Decode([]byte(ecdsaPrivateKeyPEM))
-	if block == nil || block.Type != "EC PRIVATE KEY" {
-		return nil, fmt.Errorf("fallo al decodificar el bloque PEM o tipo incorrecto")
-	}
-
-	// Parsear la clave privada en formato DER
-	privateKey, err := x509.ParseECPrivateKey(block.Bytes)
-	if err != nil {
-		return nil, fmt.Errorf("error al parsear la clave privada ECDSA: %v", err)
-	}
-
-	return privateKey, nil
 }
